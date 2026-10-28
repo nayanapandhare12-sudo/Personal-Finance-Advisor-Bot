@@ -1,0 +1,207 @@
+{% extends "base.html" %}
+{% block content %}
+
+<header class="mb-8 flex flex-wrap items-end justify-between gap-4">
+  <div>
+    <h1 class="font-display text-3xl">Good day, <span id="userName">Alex</span>.</h1>
+    <p class="text-sm text-[var(--ink)]/60 mt-1">Here's where your money stands this month.</p>
+  </div>
+  <div class="flex gap-2 text-sm">
+    <button id="resetDemoBtn" class="px-3 py-2 rounded border border-[var(--line)] hover:bg-black/5">Reset demo data</button>
+    <button id="exportBtn" class="px-3 py-2 rounded border border-[var(--line)] hover:bg-black/5">Export JSON</button>
+  </div>
+</header>
+
+<!-- Summary cards -->
+<section class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+  <div class="card p-4">
+    <p class="text-xs uppercase tracking-wide text-[var(--ink)]/50">Total Inflow</p>
+    <p class="figure text-2xl font-semibold mt-1" id="totalInflow">—</p>
+  </div>
+  <div class="card p-4">
+    <p class="text-xs uppercase tracking-wide text-[var(--ink)]/50">Total Outflow</p>
+    <p class="figure text-2xl font-semibold mt-1" id="totalOutflow">—</p>
+  </div>
+  <div class="card p-4">
+    <p class="text-xs uppercase tracking-wide text-[var(--ink)]/50">Net Cash Flow</p>
+    <p class="figure text-2xl font-semibold mt-1" id="netCashFlow">—</p>
+  </div>
+  <div class="card p-4">
+    <p class="text-xs uppercase tracking-wide text-[var(--ink)]/50">Savings Rate</p>
+    <p class="figure text-2xl font-semibold mt-1" id="savingsRate">—</p>
+  </div>
+</section>
+
+<!-- Budget burn + category chart -->
+<section class="grid md:grid-cols-3 gap-4 mb-6">
+  <div class="card p-5 md:col-span-2">
+    <div class="flex items-center justify-between mb-2">
+      <h2 class="font-display text-lg">Monthly Budget Burn</h2>
+      <span id="burnBadge" class="text-xs px-2 py-1 rounded-full font-medium">—</span>
+    </div>
+    <div class="w-full h-3 bg-black/5 rounded-full overflow-hidden">
+      <div id="burnBar" class="h-full rounded-full transition-all" style="width:0%; background:var(--forest);"></div>
+    </div>
+    <p class="text-xs text-[var(--ink)]/60 mt-2"><span class="figure" id="burnSpent">—</span> of <span class="figure" id="burnCap">—</span> spending cap
+      <button id="editCapBtn" class="ml-2 underline">edit cap</button>
+    </p>
+
+    <h3 class="font-display text-base mt-6 mb-2">Category Envelopes</h3>
+    <div id="envelopeList" class="space-y-2 text-sm"></div>
+  </div>
+
+  <div class="card p-5">
+    <h2 class="font-display text-lg mb-2">Spending by Category</h2>
+    <canvas id="categoryChart" height="220"></canvas>
+  </div>
+</section>
+
+<!-- Ledgers -->
+<section class="grid md:grid-cols-2 gap-4 mb-6">
+  <div class="card p-5">
+    <h2 class="font-display text-lg mb-3">Add Income</h2>
+    <form id="incomeForm" class="grid grid-cols-2 gap-2 text-sm">
+      <input id="incomeAmountInput" required type="number" step="0.01" min="0.01" name="amount" placeholder="Amount (₹)" class="border border-[var(--line)] rounded px-2 py-1.5 col-span-1">
+      <select required name="category" class="border border-[var(--line)] rounded px-2 py-1.5 col-span-1">
+        {% for c in income_categories %}<option value="{{c}}">{{c}}</option>{% endfor %}
+      </select>
+      <input type="text" name="description" placeholder="Description" class="border border-[var(--line)] rounded px-2 py-1.5 col-span-2">
+      <input type="date" name="date" class="border border-[var(--line)] rounded px-2 py-1.5 col-span-1">
+      <button class="col-span-1 bg-[var(--forest)] text-white rounded px-2 py-1.5">Add Income</button>
+    </form>
+    <div class="mt-4 flex gap-2 text-xs">
+      <input id="incomeSearch" placeholder="Search description…" class="border border-[var(--line)] rounded px-2 py-1 flex-1">
+      <select id="incomeFilterCategory" class="border border-[var(--line)] rounded px-2 py-1">
+        <option value="">All categories</option>
+        {% for c in income_categories %}<option value="{{c}}">{{c}}</option>{% endfor %}
+      </select>
+    </div>
+    <div id="incomeList" class="mt-3 divide-y divide-[var(--line)] text-sm max-h-64 overflow-y-auto"></div>
+  </div>
+
+  <div class="card p-5">
+    <h2 class="font-display text-lg mb-3">Add Expense</h2>
+    <form id="expenseForm" class="grid grid-cols-2 gap-2 text-sm">
+      <input id="expenseAmountInput" required type="number" step="0.01" min="0.01" name="amount" placeholder="Amount (₹)" class="border border-[var(--line)] rounded px-2 py-1.5 col-span-1">
+      <select required name="category" class="border border-[var(--line)] rounded px-2 py-1.5 col-span-1">
+        {% for c in expense_categories %}<option value="{{c}}">{{c}}</option>{% endfor %}
+      </select>
+      <input type="text" name="description" placeholder="Description" class="border border-[var(--line)] rounded px-2 py-1.5 col-span-2">
+      <input type="date" name="date" class="border border-[var(--line)] rounded px-2 py-1.5 col-span-1">
+      <button class="col-span-1 bg-[var(--red)] text-white rounded px-2 py-1.5">Add Expense</button>
+    </form>
+    <div class="mt-4 flex gap-2 text-xs">
+      <input id="expenseSearch" placeholder="Search description…" class="border border-[var(--line)] rounded px-2 py-1 flex-1">
+      <select id="expenseFilterCategory" class="border border-[var(--line)] rounded px-2 py-1">
+        <option value="">All categories</option>
+        {% for c in expense_categories %}<option value="{{c}}">{{c}}</option>{% endfor %}
+      </select>
+    </div>
+    <div id="expenseList" class="mt-3 divide-y divide-[var(--line)] text-sm max-h-64 overflow-y-auto"></div>
+  </div>
+</section>
+
+<!-- Recent transactions -->
+<section class="card p-5 mb-6">
+  <h2 class="font-display text-lg mb-3">Recent Transactions</h2>
+  <div id="recentTransactions" class="text-sm divide-y divide-[var(--line)]"></div>
+</section>
+
+<!-- Savings goals -->
+<section class="card p-5 mb-6">
+  <div class="flex items-center justify-between mb-3">
+    <h2 class="font-display text-lg">Savings Goals</h2>
+    <button id="newGoalBtn" class="text-sm px-3 py-1.5 rounded border border-[var(--line)] hover:bg-black/5">+ New goal</button>
+  </div>
+  <div id="goalsList" class="grid md:grid-cols-3 gap-4"></div>
+</section>
+
+<!-- AI advisor -->
+<section class="grid md:grid-cols-2 gap-4 mb-10">
+  <div class="card p-5">
+    <div class="flex items-center justify-between mb-3">
+      <h2 class="font-display text-lg">Financial Health Audit</h2>
+      <span id="advisorSourceBadge" class="text-xs px-2 py-1 rounded-full bg-black/5"></span>
+    </div>
+    <div class="flex items-center gap-4">
+      <svg width="110" height="110" viewBox="0 0 120 120">
+        <circle cx="60" cy="60" r="52" fill="none" stroke="#eee" stroke-width="12"/>
+        <circle id="scoreRing" cx="60" cy="60" r="52" fill="none" stroke="var(--forest)" stroke-width="12"
+          stroke-dasharray="326.7" stroke-dashoffset="326.7" stroke-linecap="round" transform="rotate(-90 60 60)"/>
+        <text id="scoreText" x="60" y="66" text-anchor="middle" font-size="28" font-family="Source Serif 4, serif">--</text>
+      </svg>
+      <div>
+        <p class="text-sm">Grade: <span id="gradeText" class="font-semibold">—</span></p>
+        <p class="text-xs text-[var(--ink)]/60 mt-1">Savings rate, envelope adherence &amp; capital reserves, weighted.</p>
+      </div>
+    </div>
+
+    <div class="mt-4">
+      <h3 class="text-sm font-semibold mb-1">Overspending Anomalies</h3>
+      <ul id="anomalyList" class="text-sm list-disc list-inside text-[var(--red)] space-y-1"></ul>
+    </div>
+
+    <div class="mt-4">
+      <h3 class="text-sm font-semibold mb-1">Emergency Liquidity Roadmap</h3>
+      <p class="text-sm" id="roadmapText"></p>
+    </div>
+
+    <div class="mt-4">
+      <h3 class="text-sm font-semibold mb-1">4-Step Tactical Action Plan</h3>
+      <ol id="actionPlanList" class="text-sm list-decimal list-inside space-y-1"></ol>
+    </div>
+    <button id="refreshAuditBtn" class="mt-4 text-sm underline">Re-run audit</button>
+  </div>
+
+  <div class="card p-5 flex flex-col">
+    <div class="flex items-center justify-between mb-3">
+      <h2 class="font-display text-lg">Ask Your Advisor</h2>
+      <span id="chatSourceBadge" class="text-xs px-2 py-1 rounded-full bg-black/5"></span>
+    </div>
+    <div id="chatMessages" class="flex-1 space-y-2 text-sm overflow-y-auto max-h-64 mb-3"></div>
+    <div id="chatSuggestions" class="flex flex-wrap gap-2 mb-3 text-xs"></div>
+    <form id="chatForm" class="flex gap-2">
+      <input id="chatInput" required placeholder="Ask about your finances…" class="flex-1 border border-[var(--line)] rounded px-3 py-2 text-sm">
+      <button class="bg-[var(--forest)] text-white rounded px-4 py-2 text-sm">Send</button>
+    </form>
+  </div>
+</section>
+
+<!-- Quick Deposit Dialog -->
+<dialog id="depositDialog" class="rounded-lg p-0 border border-[var(--line)]">
+  <div class="p-5 w-80">
+    <h3 class="font-display text-lg mb-3">Quick Deposit</h3>
+    <p class="text-sm mb-3" id="depositGoalName"></p>
+    <div class="flex gap-2 mb-3 flex-wrap">
+      <button type="button" class="depositChip px-3 py-1 rounded-full border border-[var(--line)] text-sm" data-amount="50">+<span class="chipSymbol">₹</span>50</button>
+      <button type="button" class="depositChip px-3 py-1 rounded-full border border-[var(--line)] text-sm" data-amount="100">+<span class="chipSymbol">₹</span>100</button>
+      <button type="button" class="depositChip px-3 py-1 rounded-full border border-[var(--line)] text-sm" data-amount="250">+<span class="chipSymbol">₹</span>250</button>
+      <button type="button" class="depositChip px-3 py-1 rounded-full border border-[var(--line)] text-sm" data-amount="500">+<span class="chipSymbol">₹</span>500</button>
+    </div>
+    <form id="depositForm" class="flex gap-2">
+      <input id="depositAmount" type="number" step="0.01" min="0.01" placeholder="Custom amount" class="flex-1 border border-[var(--line)] rounded px-2 py-1.5 text-sm">
+      <button class="bg-[var(--forest)] text-white rounded px-3 py-1.5 text-sm">Deposit</button>
+    </form>
+    <button id="closeDepositDialog" type="button" class="mt-3 text-xs underline">Cancel</button>
+  </div>
+</dialog>
+
+<!-- New Goal Dialog -->
+<dialog id="goalDialog" class="rounded-lg p-0 border border-[var(--line)]">
+  <div class="p-5 w-80">
+    <h3 class="font-display text-lg mb-3">New Savings Goal</h3>
+    <form id="goalForm" class="space-y-2 text-sm">
+      <input required name="name" placeholder="Goal name" class="w-full border border-[var(--line)] rounded px-2 py-1.5">
+      <input required id="goalTargetInput" type="number" step="0.01" min="0.01" name="target_amount" placeholder="Target amount" class="w-full border border-[var(--line)] rounded px-2 py-1.5">
+      <input id="goalCurrentInput" type="number" step="0.01" min="0" name="current_amount" placeholder="Starting amount (optional)" class="w-full border border-[var(--line)] rounded px-2 py-1.5">
+      <input required type="date" name="deadline" class="w-full border border-[var(--line)] rounded px-2 py-1.5">
+      <div class="flex gap-2 justify-end">
+        <button type="button" id="closeGoalDialog" class="text-xs underline">Cancel</button>
+        <button class="bg-[var(--forest)] text-white rounded px-3 py-1.5">Create goal</button>
+      </div>
+    </form>
+  </div>
+</dialog>
+
+<script src="/static/js/app.js"></script>
+{% endblock %}

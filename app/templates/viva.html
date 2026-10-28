@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Documentation & Viva Voce{% endblock %}
+{% block content %}
+<h1 class="font-display text-2xl mb-1">Technical Documentation &amp; Viva Voce</h1>
+<p class="text-sm text-[var(--ink)]/60 mb-8">Architecture, data flow, and the formulas behind every number on the dashboard.</p>
+
+<section class="card p-6 mb-6">
+  <h2 class="font-display text-lg mb-4">System Architecture</h2>
+  <pre class="mermaid text-sm bg-black/5 rounded p-4 overflow-x-auto">
+graph LR
+  Browser[Browser SPA] -->|fetch JSON| Routes[Flask Blueprints]
+  Routes --> Services[Services Layer]
+  Services --> Models[SQLAlchemy Models]
+  Models --> DB[(SQLite)]
+  Services --> Advisor[AdvisorProvider]
+  Advisor -->|configured| LLM[LLMAdvisor / Gemini API]
+  Advisor -->|always available| Heuristic[HeuristicAdvisor]
+  LLM -.fallback on failure.-> Heuristic
+  </pre>
+</section>
+
+<section class="card p-6 mb-6">
+  <h2 class="font-display text-lg mb-4">Data Flow Pipeline</h2>
+  <pre class="mermaid text-sm bg-black/5 rounded p-4 overflow-x-auto">
+sequenceDiagram
+  participant U as User
+  participant UI as Dashboard (JS)
+  participant API as Flask API
+  participant SVC as finance_service.py
+  participant DB as SQLite
+  U->>UI: Add expense
+  UI->>API: POST /api/expense
+  API->>SVC: validate + persist
+  SVC->>DB: INSERT
+  UI->>API: GET /api/dashboard/summary
+  API->>SVC: get_totals(), envelope_status()
+  SVC->>DB: SELECT
+  SVC-->>API: aggregated JSON
+  API-->>UI: JSON
+  UI-->>U: Re-rendered charts & badges, no reload
+  </pre>
+</section>
+
+<section class="card p-6">
+  <h2 class="font-display text-lg mb-4">Viva Q&amp;A</h2>
+  <div class="space-y-4">
+    {% for pair in qa_pairs %}
+    <div class="border-b border-[var(--line)] pb-3">
+      <p class="font-semibold text-sm">Q{{ loop.index }}. {{ pair.q }}</p>
+      <p class="text-sm text-[var(--ink)]/70 mt-1">{{ pair.a }}</p>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";
+  mermaid.initialize({ startOnLoad: true, theme: "neutral" });
+</script>
+{% endblock %}

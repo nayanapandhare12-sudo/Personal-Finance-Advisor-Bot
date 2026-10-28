@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}Ledger — Personal Finance Advisor{% endblock %}</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --ink: #14231c;
+    --paper: #f7f5ef;
+    --paper-raised: #ffffff;
+    --forest: #1f5c47;
+    --forest-dark: #163f31;
+    --amber: #a8631a;
+    --red: #a3312a;
+    --line: #ddd7c8;
+  }
+  body { background: var(--paper); color: var(--ink); font-family: 'Inter', sans-serif; }
+  .font-display { font-family: 'Source Serif 4', serif; }
+  .figure { font-variant-numeric: tabular-nums; }
+  .card { background: var(--paper-raised); border: 1px solid var(--line); border-radius: 10px; }
+  .status-healthy { color: #1f5c47; background: #e6f0ea; }
+  .status-moderate { color: #1d4e89; background: #e6eef7; }
+  .status-high { color: #a8631a; background: #f6ead9; }
+  .status-critical { color: #a3312a; background: #f6e2e0; }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-thumb { background: var(--line); border-radius: 4px; }
+  .nav-link { border-bottom: 2px solid transparent; }
+  .nav-link.active, .nav-link:hover { border-bottom-color: var(--forest); }
+  @media print {
+    .no-print { display: none !important; }
+  }
+</style>
+{% block head %}{% endblock %}
+</head>
+<body class="min-h-screen">
+<nav class="no-print sticky top-0 z-40 bg-[var(--forest-dark)] text-white">
+  <div class="max-w-7xl mx-auto px-5 flex items-center justify-between h-14">
+    <a href="/" class="font-display text-lg tracking-tight">Personal Finance Advisor</a>
+    <div class="flex gap-6 text-sm items-center">
+      <a href="/" class="nav-link pb-1">Dashboard</a>
+      <a href="/statements" class="nav-link pb-1">Statements</a>
+      <a href="/viva" class="nav-link pb-1">Documentation</a>
+      <select id="currencySelect" class="bg-transparent border border-white/30 rounded px-2 py-1 text-sm"></select>
+    </div>
+  </div>
+</nav>
+<main class="max-w-7xl mx-auto px-5 py-8">
+  {% block content %}{% endblock %}
+</main>
+<script>
+  window.APP_CURRENCIES = {{ currencies | tojson if currencies is defined else '{}' }};
+</script>
+<script src="/static/js/currency.js"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

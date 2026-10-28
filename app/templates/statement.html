@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Statement — {{ year }}-{{ '%02d'|format(month) }}{% endblock %}
+{% block content %}
+<div class="no-print mb-4 flex items-center gap-3 text-sm">
+  <form method="get" class="flex gap-2 items-center">
+    <label>Year <input type="number" name="year" value="{{ year }}" class="border border-[var(--line)] rounded px-2 py-1 w-20"></label>
+    <label>Month <input type="number" name="month" min="1" max="12" value="{{ month }}" class="border border-[var(--line)] rounded px-2 py-1 w-16"></label>
+    <button class="px-3 py-1.5 rounded border border-[var(--line)]">View</button>
+  </form>
+  <button onclick="window.print()" class="px-3 py-1.5 rounded bg-[var(--forest)] text-white">Print / Save as PDF</button>
+</div>
+
+<div class="card p-10 bg-white max-w-3xl mx-auto" id="printArea">
+  <header class="border-b border-[var(--line)] pb-4 mb-6">
+    <h1 class="font-display text-2xl">Monthly Statement</h1>
+    <p class="text-sm text-[var(--ink)]/60">{{ user.name }} · {{ year }}-{{ '%02d'|format(month) }}</p>
+  </header>
+
+  <section class="grid grid-cols-4 gap-4 mb-8 text-sm">
+    <div><p class="text-[var(--ink)]/50">Total Inflow</p><p class="figure font-semibold">{{ totals.total_inflow }}</p></div>
+    <div><p class="text-[var(--ink)]/50">Total Outflow</p><p class="figure font-semibold">{{ totals.total_outflow }}</p></div>
+    <div><p class="text-[var(--ink)]/50">Net Cash Flow</p><p class="figure font-semibold">{{ totals.net_cash_flow }}</p></div>
+    <div><p class="text-[var(--ink)]/50">Savings Rate</p><p class="figure font-semibold">{{ totals.savings_rate }}%</p></div>
+  </section>
+
+  <section class="mb-8">
+    <h2 class="font-display text-lg mb-2">Category Breakdown</h2>
+    <table class="w-full text-sm">
+      <thead><tr class="text-left border-b border-[var(--line)]"><th class="py-1">Category</th><th class="text-right">Amount</th><th class="text-right">% of spend</th></tr></thead>
+      <tbody>
+        {% for row in breakdown %}
+        <tr class="border-b border-[var(--line)]/50">
+          <td class="py-1">{{ row.category }}</td>
+          <td class="text-right figure">{{ row.amount }}</td>
+          <td class="text-right figure">{{ row.pct }}%</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2 class="font-display text-lg mb-2">Full Transaction List</h2>
+    <table class="w-full text-sm">
+      <thead><tr class="text-left border-b border-[var(--line)]"><th class="py-1">Date</th><th>Type</th><th>Category</th><th>Description</th><th class="text-right">Amount</th></tr></thead>
+      <tbody>
+        {% for t in transactions %}
+        <tr class="border-b border-[var(--line)]/50">
+          <td class="py-1">{{ t.date }}</td>
+          <td>{{ t.type }}</td>
+          <td>{{ t.category }}</td>
+          <td>{{ t.description }}</td>
+          <td class="text-right figure">{{ t.amount }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+</div>
+{% endblock %}
